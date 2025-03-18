@@ -1,1 +1,31 @@
+name: MSBuild Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      solution_path:
+        required: true
+        type: string
+      build_configuration:
+        required: false
+        type: string
+        default: 'Release'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'  # Adjust based on your project needs
+
+      - name: Restore Dependencies
+        run: dotnet restore ${{ inputs.solution_path }}
+
+      - name: Build Solution
+        run: dotnet build ${{ inputs.solution_path }} --configuration ${{ inputs.build_configuration }} --no-restore
 
