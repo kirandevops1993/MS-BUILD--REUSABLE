@@ -6,6 +6,9 @@ on:
       solution_path:
         required: true
         type: string
+      project_path:
+        required: true
+        type: string
       build_configuration:
         required: false
         type: string
@@ -21,11 +24,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # Adjust based on your project needs
+          dotnet-version: '8.0.x'  # Adjust as needed
 
       - name: Restore Dependencies
-        run: dotnet restore ${{ inputs.solution_path }}
+        run: dotnet restore ${{ inputs.project_path }}
 
       - name: Build Solution
         run: dotnet build ${{ inputs.solution_path }} --configuration ${{ inputs.build_configuration }} --no-restore
 
+      - name: Publish
+        run: dotnet publish ${{ inputs.project_path }} --configuration ${{ inputs.build_configuration }} --output ./publish
