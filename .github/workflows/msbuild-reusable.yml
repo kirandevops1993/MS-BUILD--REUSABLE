@@ -6,9 +6,6 @@ on:
       solution_path:
         required: true
         type: string
-      project_path:
-        required: true
-        type: string
       build_configuration:
         required: false
         type: string
@@ -16,21 +13,16 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest  # Required for MSBuild (Windows only)
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'  # Adjust as needed
+      - name: Setup MSBuild (Visual Studio)
+        uses: microsoft/setup-msbuild@v1  # Installs MSBuild
 
-      - name: Restore Dependencies
-        run: dotnet restore ${{ inputs.project_path }}
+      - name: Restore NuGet Packages
+        run: nuget restore ${{ inputs.solution_path }}
 
-      - name: Build Solution
-        run: dotnet build ${{ inputs.solution_path }} --configuration ${{ inputs.build_configuration }} --no-restore
-
-      - name: Publish
-        run: dotnet publish ${{ inputs.project_path }} --configuration ${{ inputs.build_configuration }} --output ./publish
+      - name: Build Solution with MSBuild
+        run: msbuild ${{ inputs.solution_path }} /p:Configuration=${{ inputs.build_configuration }}
