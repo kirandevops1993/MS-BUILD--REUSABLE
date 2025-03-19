@@ -3,26 +3,54 @@ name: MSBuild Reusable Workflow
 on:
   workflow_call:
     inputs:
-      solution_path:
+      platform:
         required: true
         type: string
-      build_configuration:
-        required: false
+      configuration:
+        required: true
         type: string
-        default: 'Release'
+      clean:
+        required: false
+        default: false
+        type: boolean
+      maxCpu:
+        required: false
+        default: 4
+        type: number
+      msBuildArgs:
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
-    runs-on: windows-latest  
+    runs-on: windows-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup MSBuild (Visual Studio)
-        uses: microsoft/setup-msbuild@v1  # Installs MSBuild
+      - name: Locate Solution File
+        run: Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
+        shell: pwsh
 
       - name: Restore NuGet Packages
-        run: nuget restore ${{ inputs.solution_path }}
+        run: |
+          $solution = Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "*.sln" | Select-Object -ExpandProperty FullName
+          if ($solution) { 
+            Write-Host "Solution file found: $solution"
+            nuget restore "$solution"
+          } else { 
+            Write-Host "No solution file found!" 
+            exit 1 
+          }
+        shell: pwsh
 
       - name: Build Solution with MSBuild
-        run: msbuild ${{ inputs.solution_path }} /p:Configuration=${{ inputs.build_configuration }}
+        run: |
+          msbuild "$solution" /p:Platform=${{ inputs.platform }} /p:Configuration=${{ inputs.configuration }} `
+          ${{ inputs.msBuildArgs }} `
+          ${{ inputs.clean && '/t:Clean' || '' }} `
+          /m:${{ in
